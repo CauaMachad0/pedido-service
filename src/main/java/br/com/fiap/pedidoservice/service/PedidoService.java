@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.web.client.RestTemplateAutoConfiguration;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 public class PedidoService {
     private static final Logger logger = LoggerFactory.getLogger(PedidoService.class);
@@ -42,7 +44,7 @@ public class PedidoService {
                     logger.info("Produto {} encontrado: {}. Preço: {}" , produto.id(), produto.nome(), produto.preco());
                     valorTotalCalculado += produto.preco() * itemPedido.getQuantidade();
                 } else {
-
+                    logger.warn("Produto com id {} não encontrado no catálogo. ID: " + item.getIdProduto());
                 }
             } catch (HttpClientErrorException.NotFound e) {
                 logger.warn("Porduto com id {} não encontrado no catalogo (404).", item.getIdProduto());
@@ -52,5 +54,15 @@ public class PedidoService {
                 throw new RuntimeException("Erro ao consultar Produto" + e.getMessage());
             }
         }
+
+        pedido.setValorTotal(valorTotalCalculado);
+        pedido.setStatus("PENDENTE");
+        Pedido pedidoSalvo = pedidoRepository.save(pedido);
+        logger.info("Pedido id {} criado com sucesso. Valor total: {}", pedidoSalvo.getId(), pedidoSalvo.getValorTotal());
+        return pedidoSalvo;
+    }
+
+    public List<Pedido> listarPedidos(){
+        return pedidoRepository.findAll();
     }
 }
